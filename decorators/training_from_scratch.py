@@ -54,6 +54,7 @@ def func_announcer(func):
         print(f"{' ' * 4}Вызов функции {func.__name__} c args={args}, kwargs={kwargs}")
         result = func(*args, **kwargs)
         print(f"{' ' * 4}Результат: {result}")
+        return result
     return wrapper
 
 # таймер + аргументы
@@ -100,20 +101,68 @@ def logger_with_signatures(func):
         return result
     return wrapper
 
-# Замыкание - логгер на последние 5 записей
-def logger_with_limit
+################# Трена 3 19.03.25
+
+# Замыкание - логгер на последние max_log_size записей
+def logger_with_limit(max_log_size: int):
+    limit = max_log_size
+    log = []
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            print(result)
+            log.append(result)
+            if len(log) > limit:
+                log.pop(0)
+            print(f"{' ' * 4}Логгер с лимитом = {limit}: {log}")
+            return result
+        return wrapper
+    return decorator
 
 
+# Замыкание - Простой кэш
+def simple_cache(func):
+    cache = {}
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # чекнуть кеш
+        sig = inspect.signature(func)
+        bound = sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        key = tuple(bound.arguments.items())  # Уникальный ключ
+
+        # вернуть готовое решение если есть
+        if key in cache:
+            print("Есть в cache!")
+            return cache[key]
+
+        # если нет - рассчитать решение
+        print("Нет в cache! Рассчитываем...")
+        result = func(*args, **kwargs)
+        # добавить решение в кэш
+        cache[key] = result
+
+        return result
+    return wrapper
 
 
+@logger_with_limit(2)
 @counter_decorator
 @logger_with_signatures
 @func_announcer
 @timer_with_args
+@simple_cache
 def uppercase(text: str, default_arg = False):
     """Возвращает переданное имя заглавными символами.
     default = False - тут для демонстрации работы bound.apply_defaults()"""
     return text.upper()
+
+uppercase('bilbo is good')
+uppercase('bilbo is bad')
+uppercase('bilbo is ugly')
 
 uppercase('bilbo is good')
 uppercase('bilbo is bad')
