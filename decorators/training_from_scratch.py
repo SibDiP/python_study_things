@@ -148,7 +148,7 @@ def simple_cache(func):
         return result
     return wrapper
 
-# Замыкание - Кэш с хеширвоанием ключа
+# Замыкание - Кэш с хеширвоанием ключа (1/2)
 import hashlib
 
 
@@ -173,6 +173,39 @@ def cache_with_hash(func):
         return result
     return wrapper
 
+# Замыкание - Кэш с хэшированием, TTL и sizelimit (2/2)
+
+def cache_with_hash_ttl_lenlimit(ttl: int = 300, len_limit = 1000):
+    def decorator(func):
+        print("##############")
+        cache = {}
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            print("@@@@@@@@@@@@@@")
+            key = make_key(func, args, kwargs)
+            
+            if key in cache:
+                result, timestamp = cache[key]
+                if time.time() - timestamp < ttl:
+                    print(f"Есть в кэше с хэшем!")
+                    return result
+                else:
+                    print(f'Есть в кэше с хэшем, но просрочен.')
+                    del cache[key]
+            
+            result = func(*args, **kwargs)
+            current_time = int(time.time())
+            cache[key] = (result, current_time)
+
+            # Ограничение размера
+            if len(cache) > len_limit:
+                oldest_key = min(cache, key=lambda x: cache[x][1])
+                del cache[oldest_key]
+            print(f"Кэш с хэшированием: {cache}")
+            return result
+        return wrapper
+    return decorator
+
 
 
 @logger_with_limit(2)
@@ -182,6 +215,7 @@ def cache_with_hash(func):
 @timer_with_args
 @cache_with_hash
 @simple_cache
+@cache_with_hash_ttl_lenlimit
 def uppercase(text: str, default_arg = False):
     """Возвращает переданное имя заглавными символами.
     default = False - тут для демонстрации работы bound.apply_defaults()"""
@@ -195,5 +229,5 @@ uppercase('bilbo is good')
 uppercase('bilbo is bad')
 uppercase('bilbo is ugly')
 
-
+print(time.time())
 
