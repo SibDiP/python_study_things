@@ -148,12 +148,39 @@ def simple_cache(func):
         return result
     return wrapper
 
+# Замыкание - Кэш с хеширвоанием ключа
+import hashlib
+
+
+def make_key(func, args, kwargs):
+    arg_str = f"{func.__name__}:{args}:{kwargs}"
+    return hashlib.md5(arg_str.encode()).hexdigest()[:16]
+
+def cache_with_hash(func):
+    cache = {}
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        key = make_key(func, args, kwargs)
+        
+        if key in cache:
+            print(f"Есть в кэше с хэшом!")
+            result = cache[key]
+        else:
+            result = func(*args, **kwargs)
+            cache[key] = result
+        
+        print(f"Кэш с хэшированием: {cache}")
+        return result
+    return wrapper
+
+
 
 @logger_with_limit(2)
 @counter_decorator
 @logger_with_signatures
 @func_announcer
 @timer_with_args
+@cache_with_hash
 @simple_cache
 def uppercase(text: str, default_arg = False):
     """Возвращает переданное имя заглавными символами.
