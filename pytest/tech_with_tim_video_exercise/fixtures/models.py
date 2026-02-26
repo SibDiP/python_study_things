@@ -30,3 +30,7 @@ class User(Base):
         CheckConstraint('LENGTH(username) <= 50', name='username_maxlen'),
         CheckConstraint('LENGTH(email) <= 254', name='email_maxlen')
     )
+
+    def __repr__(self):
+        return f"User(id={self.id}), username={self.username}, emai{self.email})"
+
