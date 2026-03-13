@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, User
+from fixtures.exceptions import UserAlreadyExistsError
 
 engine = create_engine('sqlite:///users.db', echo=True)
 
