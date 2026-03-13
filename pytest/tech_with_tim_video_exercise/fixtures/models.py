@@ -1,17 +1,14 @@
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from sqlalchemy import (
-    Integer, String, CheckConstraint,
-    )
+from sqlalchemy import String
 
 class Base(DeclarativeBase):
     pass
 
 class User(Base):
     __tablename__ = 'users'
-    id: Mapped[int] = mapped_column(
-        Integer, 
+
+    id: Mapped[int] = mapped_column( 
         primary_key=True, 
         autoincrement=True
     )
@@ -26,10 +23,5 @@ class User(Base):
         nullable=False
     )
 
-        CheckConstraint('LENGTH(username) <= 50', name='username_maxlen'),
-        CheckConstraint('LENGTH(email) <= 254', name='email_maxlen')
-    )
-
     def __repr__(self):
         return f"User(id={self.id}), username={self.username}, emai{self.email})"
-
