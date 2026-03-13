@@ -26,7 +26,6 @@ class User(Base):
         nullable=False
     )
 
-    __table_args__ = (
         CheckConstraint('LENGTH(username) <= 50', name='username_maxlen'),
         CheckConstraint('LENGTH(email) <= 254', name='email_maxlen')
     )
