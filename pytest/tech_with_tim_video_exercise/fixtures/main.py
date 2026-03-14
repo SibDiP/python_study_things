@@ -1,10 +1,13 @@
 from sqlalchemy import create_engine, select, exists
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 from models import Base, User
 from fixtures.exceptions import UserAlreadyExistsError, UserNotFoundError
 
 # echo=True - SQL логи
 engine = create_engine('sqlite:///users.db', echo=True)
+# фабрика. expire_on_commit - не стирает данные объектов полсе commit
+SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
+# создаём таблицы
 Base.metadata.create_all(engine)
 
 class UserCRUD:
@@ -95,4 +98,5 @@ class UserCRUD:
             self.session.commit()
             return True
         return False
+    
     
