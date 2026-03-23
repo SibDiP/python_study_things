@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, select, exists
 from sqlalchemy.orm import Session, sessionmaker
 from models import Base, User
-from fixtures.exceptions import UserAlreadyExistsError, UserNotFoundError
+from exceptions import BaseFixturesError, UserAlreadyExistsError, UserNotFoundError
 
 # echo=True - SQL логи
 engine = create_engine('sqlite:///users.db', echo=True)
@@ -53,7 +53,7 @@ class UserCRUD:
         """Вернуть User с указанным email если он есть в БД.
 
         Returns:
-            User | None:
+            User | None: Объект User либо None
         """
         stmt = select(User).where(User.email == email)
         # scalar_one_or_none() - стандарт для Unique поля
@@ -86,17 +86,39 @@ class UserCRUD:
         return user
 
         
-    def user_delite(self, email: str) -> bool:
+    def user_delite_or_rise(self, email: str) -> bool:
         """Удалить пользователя с указанным email из БД
 
         Returns:
             bool: 
+        
+        Raises:
+            UserNotFoundError: ошибка при отсутсвии пользователя с указанным email в БД
         """
         user = self.user_get(email)
+
+        if not user:
+            raise UserNotFoundError(email)
+
         if user:
             self.session.delete(user)
             self.session.commit()
             return True
         return False
-    
-    
+
+# Демо
+if __name__ == '__main__':
+    with SessionLocal() as session:
+        crud = UserCRUD(session)
+
+        try:
+            user = crud.user_create_or_raise("Jo", "jo@example.com")
+            print(f"Создан: {user}")
+
+            updated = crud.user_update_or_raise("jo@example.com", name="Mama")
+            print(f"Обновлён: {updated}")
+
+        except (BaseFixturesError) as e:
+            print(f"Ошибка логики: {e}")
+        except Exception as e:
+            print(f"Неопределённая ошибка: {e}")
