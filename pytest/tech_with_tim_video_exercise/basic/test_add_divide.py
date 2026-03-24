@@ -9,3 +9,7 @@ def test_add():
 def test_divide():
     with pytest.raises(ValueError, match="Cannot divide by zero"):
         divide(10, 0)
+    with pytest.raises(ValueError, match="Cannot divide by zero") as exc_info:
+        divide(10,0)
+    # отобразится только с флагом -s
+    print(exc_info)
