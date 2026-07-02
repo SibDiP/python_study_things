@@ -20,6 +20,7 @@ def timeit(func):
         start_time = time.perf_counter()
         print(f"Запуск {func.__name__}")
         result = func(*args, **kwargs)
+        print(result)
         duration = time.perf_counter() - start_time
         print(f"Время выполнения {func.__name__}: {duration:.4f}")
         return result
@@ -28,6 +29,6 @@ def timeit(func):
 @timeit
 def slow_func(sec) -> str:
     time.sleep(sec)
-    return f"Oh, I was sleep for a {sec}"
+    return f"Ох как я сладко спал, себе со смехом он сказал"
 
 slow_func(1)
