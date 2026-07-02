@@ -36,8 +36,4 @@ def retry(retries: int = 3, delay:int = 1):
 # function
 @retry(4, 1)
 def exception_raiser():
-    try:
         a = 99 / 0
-    except ZeroDivisionError:
-        print(f"Ошибка: {ZeroDivisionError}")
-        raise ZeroDivisionError
