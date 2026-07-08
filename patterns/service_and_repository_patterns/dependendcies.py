@@ -13,6 +13,7 @@ from fastapi import Depends
 
 from schemas import Note, NoteIn
 from repositories import AbstractNoteRepository
+from services import NotesService
 
 class InMemoryNoteRepository(AbstractNoteRepository):
     def __init__(self) -> None:
@@ -46,3 +47,9 @@ class InMemoryNoteRepository(AbstractNoteRepository):
     def del_note(self, note_id: int) -> None:
         self._notes.pop(note_id)
         return None
+
+def get_note_repository() -> AbstractNoteRepository:
+    return InMemoryNoteRepository()
+
+def get_notes_service(notes_repo: AbstractNoteRepository = Depends(get_note_repository)):
+    return NotesService(notes_repo)
