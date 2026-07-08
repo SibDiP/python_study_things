@@ -53,3 +53,4 @@ def get_note_repository() -> AbstractNoteRepository:
 
 def get_notes_service(notes_repo: AbstractNoteRepository = Depends(get_note_repository)):
     return NotesService(notes_repo)
+
