@@ -1,9 +1,5 @@
-# Имитация базы данных
-# notes_db: dict[int, Note] = {}
-# next_id = 1
-
 from abc import ABC, abstractmethod
-from schemas import Note, NoteIn
+from schemas import Note, NoteIn, NoteUpdate
 
 class AbstractNoteRepository(ABC):
     @abstractmethod
@@ -15,11 +11,11 @@ class AbstractNoteRepository(ABC):
         pass
 
     @abstractmethod
-    def get_note_by_id(self, note_id: int) -> Note:
+    def get_note_by_id(self, note_id: int) -> Note | None:
         pass
     
     @abstractmethod
-    def update_note(self, note_id: int, note_in: NoteIn) -> Note:
+    def update_note(self, note_id: int, note_update: NoteUpdate) -> Note:
         pass
 
     @abstractmethod

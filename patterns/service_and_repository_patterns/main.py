@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, status, Depends
 
-from schemas import Note, NoteIn
+from schemas import Note, NoteIn, NoteUpdate
 from services import NotesService
 from dependencies import get_notes_service
 
@@ -23,7 +23,7 @@ def get_all_notes(
 def get_note(
     note_id: int,
     notes_service: NotesService = Depends(get_notes_service)
-    ) -> Note:
+    ) -> Note | None:
     try:
         return notes_service.get_note_by_id(note_id)
     except Exception as e:
@@ -32,11 +32,11 @@ def get_note(
 @app.put("/notes/{note_id}", response_model=Note)
 def update_note(
     note_id: int, 
-    note_in: NoteIn,
+    note_update: NoteUpdate,
     notes_service: NotesService = Depends(get_notes_service)
     ) -> Note:
     try:
-        return notes_service.update_note(note_id, note_in)
+        return notes_service.update_note(note_id, note_update)
     except KeyError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
 

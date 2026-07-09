@@ -11,7 +11,7 @@ class Note(BaseModel):
 
 from fastapi import Depends
 
-from schemas import Note, NoteIn
+from schemas import Note, NoteIn, NoteUpdate
 from repositories import AbstractNoteRepository
 from services import NotesService
 
@@ -26,23 +26,26 @@ class InMemoryNoteRepository(AbstractNoteRepository):
             **note_in.model_dump(),
             )
         self._notes[self._next_id] = new_note
+        self._next_id += 1
         return new_note
     
     def get_all_notes(self) -> list[Note]:
         return list(self._notes.values())
     
-    def get_note_by_id(self, note_id: int) -> Note:
-        #TODO. Проверка на наличие
-        return self._notes[note_id]
+    def get_note_by_id(self, note_id: int) -> Note | None:
+        return self._notes.get(note_id)
     
-    def update_note(self, note_id: int, note_in: NoteIn) -> Note:
-        update_note = Note(
-            id=note_id,
-            **note_in.model_dump(),
-            )
-        self._notes[update_note.id] = update_note
+    def update_note(self, note_id: int, note_update: NoteUpdate) -> Note:
+        if note_id not in self._notes:
+            raise KeyError
+        
+        current_note = self._notes[note_id]
+        update_data = note_update.model_dump(exclude_unset=True)
 
-        return update_note
+        for k, v in update_data.items():
+            setattr(current_note, k, v)
+
+        return current_note
     
     def del_note(self, note_id: int) -> None:
         self._notes.pop(note_id)
