@@ -15,7 +15,7 @@ class AbstractNoteRepository(ABC):
         pass
     
     @abstractmethod
-    def update_note(self, note_id: int, note_update: NoteUpdate) -> Note:
+    def update_note(self, note_id: int, note_update: NoteUpdate) -> Note | None:
         pass
 
     @abstractmethod

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, status, Depends
 
 from schemas import Note, NoteIn, NoteUpdate
-from services import NotesService
+from services import NotesService, NoteNotFoundError
 from dependencies import get_notes_service
 
 app = FastAPI()
@@ -37,7 +37,7 @@ def update_note(
     ) -> Note:
     try:
         return notes_service.update_note(note_id, note_update)
-    except KeyError:
+    except NoteNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
 
 @app.delete("/notes/{note_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -35,9 +35,9 @@ class InMemoryNoteRepository(AbstractNoteRepository):
     def get_note_by_id(self, note_id: int) -> Note | None:
         return self._notes.get(note_id)
     
-    def update_note(self, note_id: int, note_update: NoteUpdate) -> Note:
+    def update_note(self, note_id: int, note_update: NoteUpdate) -> Note | None:
         if note_id not in self._notes:
-            raise KeyError
+            return None
         
         current_note = self._notes[note_id]
         update_data = note_update.model_dump(exclude_unset=True)
@@ -50,6 +50,8 @@ class InMemoryNoteRepository(AbstractNoteRepository):
     def del_note(self, note_id: int) -> None:
         self._notes.pop(note_id)
         return None
+    
+        
 
 def get_note_repository() -> AbstractNoteRepository:
     return InMemoryNoteRepository()
