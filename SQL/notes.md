@@ -158,7 +158,7 @@ ORDER BY year, appearances
     - Работа с таблицами
     CREATE TABLE
     DROP TABLE
-    ALTER TABLE
+    ALTER TABLE - изменить
 
     - Языки в SQL
     Data Definition Language (DDL) - CREATE/DROP/ALTER
@@ -885,13 +885,70 @@ ROLLBACK; # отмена изменений
 
 - Индексы
     - Структура данных, позволяющая быстро определить положение интересующих данных в базе
-    - Создается для столбца (реже - совокупности столбцов) в таблице
+    - Создается для столбца/ов в таблице
     - Обеспечивает возможность повысить производительность запросов
+    - Используется автоматически СУБД если это эффективно
+    - повышение производительности на чтение / снижение на запись
+
+    - как алфавитный указатель в конце толстой книги или оглавление. Вместо того чтобы листать всю книгу с первой до последней страницы (Full Scan), СУБД смотрит в указатель, сразу находит нужную страницу и переходит к ней.
 
 - Использование индексов
     - Быстрый поиск положения интересующих данных в таблице
     - Извлечение всех интересующих данных из таблицы по найденному положению
     Реализуется автоматически СУБД
+
+### Когда может использоваься индекс
+
+- для WHERE
+- для JOIN
+- для ORDER BY
+
+### Порядок сортировки данных в индексе
+
+CREATE INDES superheroes_appearances_idx
+ON superheroes(appearances DESC)
+
+### Индекс по нескольким столбцам
+
+CREATE INDEX person_name_idx
+ON person(last_name, first_name)
+
+- использование. Оба:
+
+SELECT *
+FROM person
+WHERE last_name = 'Sozykin'
+    AND first_name = 'Andrey'
+
+- использование. Первый ():
+    - по второму не работает, так как отсортиррованно по первому.
+
+SELECT *
+FROM person
+WHERE last_name = 'Sozykin'
+
+### Удаление индекса
+
+DROP INDEX person_name_idx
+
+##  Теория +
+
+- Главный алгоритм: B-Tree (Сбалансированное дерево)
+    - Данные в дереве разветвляются по уровням. Вместо перебора миллионов строк СУБД делает всего 3–5 точечных переходов от корня дерева к «листьям» и находит нужную строку за доли миллисекунды.
+
+- Основные виды индексов
+    - Кластерный индекс (Clustered Index) Это сама таблица, физически отсортированная по ключу. У таблицы может быть только один кластерный индекс. Обычно это первичный ключ (PRIMARY KEY).
+    - Некластерный индекс (Non-Clustered Index) Это отдельные «записные книжки» со ссылками на основную таблицу. Их можно создать много (например, по полям email, phone, created_at).
+    - Составной индекс (Composite Index) Индекс сразу по двум или более столбцам (например, last_name + first_name). Важен порядок: он эффективно работает, только если вы ищете по первому столбцу или по обоим сразу.
+    - Уникальный индекс (Unique Index) Не только ускоряет поиск, но и запрещает дубликаты (например, не даст зарегистрировать два одинаковых email).
+
+- Какой ценой? (Минусы и компромиссы)
+    - Замедление операций записи (INSERT, UPDATE, DELETE)
+    - Потребление дискового пространства и ОЗУ
+    - Фрагментация. 
+        - приходится периодически обслуживать (делать REBUILD или REORGANIZE)
+
+- Золотое правило использования - Создавайте индексы для: полей, которые часто стоят в блоках WHERE, JOIN, ORDER BY и GROUP BY. Не создавайте индексы для: таблиц, в которых мало строк (до нескольких сотен), или для столбцов с низкой уникальностью.
 
 
 ## Примеры
@@ -906,3 +963,176 @@ ON superheroes(name)
 SELECT name, appearances, eye, hair
 FROM superheroes
 WHERE name LIKE '%Iron Man%'
+
+
+## Заметки на полях
+
+### Проверка индекса: EXPLAIN
+
+* EXPLAIN — показывает теоретический план запроса.
+* EXPLAIN ANALYZE — выполняет запрос на самом деле и показывает точное время.
+* Index Scan в ответе — отлично, индекс работает.
+* Seq Scan в ответе — индекс игнорируется, идет полный перебор таблицы.
+
+### Когда индекс НЕ работает (Seq Scan)
+
+* Знак % в начале поиска: LIKE '%Man'. Блок B-Tree сортирует данные только с первой буквы.
+* Функции над полем: WHERE LOWER(name) = '...'. Функция меняет данные на лету, ломая логику индекса.
+* Маленькая таблица: Если в таблице мало строк, базе быстрее прочесть её всю целиком, чем тратить время на индекс.
+* Много совпадений: При поиске WHERE name != 'Batman' или выборке >20% всей таблицы базе проще отсканировать всё подряд.
+
+### Как это исправить
+
+* Для поиска по середине слова (%Man%) — используйте специальный индекс GIN вместо B-Tree.
+* Для поиска без учета регистра — создавайте индекс по выражению: CREATE INDEX ... ON superheroes (LOWER(name)).
+
+
+# 17 Ограничения в базах данных SQL
+
+- PRIMARY KEY -  первичный ключ 
+- FOREIGN KEY - внешний ключ
+- NOT NULL - не пустые значения 
+- UNIQUE - уникальные значения
+- CHECK - проверка условий 
+
+- Ограничения на уровне таблицы
+    - PRIMARY KEY(product_id, order_id)
+    - CONSTRAINT positive_price CHECK (price >= 0)
+
+
+CREATE TABLE superheroes(
+    id INT PRIMARY KEY,
+    name VARCHAR(100) UNIQUE,
+    align VARCHAR(30) NOT NULL,
+    eye VARCHAR(30) UNIQUE NOT NULL
+)
+
+- Первичный ключ из нескольких полей - составной ключ
+    - Уникальной должна быть комбинация значений, а не каждое поле по отдельности.
+    - Запрет на NULL: Ни product_id, ни order_id не могут быть пустыми (NULL)
+    - часто используется в промежуточных таблицах (связь «многие ко многим»)
+
+CREATE TABLE sales(
+    product_id INT,
+    order_id INT,
+    quantity INT,
+    PRIMARY KEY(product_id, order_id)
+)
+
+- Ограничения по проверке значений 
+
+CREATE TABLE products(
+    id PRIMARY KEY,
+    name VARCHAR(100),
+    type_id INT,
+    price INT CHECK (price >= 0)
+)
+
+- Именованные ограничения (в переводе CONSTRAINT)
+
+CREATE TABLE products(
+    ...
+    price INT CONSTRAINT positive_price
+        CHECK (price >= 0)
+)
+
+- Ограничения на уровне таблицы
+
+CREATE TABLE products(
+    ...
+    PRICE INT,
+    CONSTRAINT positive_price CHECK (price >= 0)
+)
+
+-Ограничения ссылочной целостности / внешнего ключа
+
+CREATE TABLE products(
+    ...
+    type_id INT REFERENCES product_types(id),
+    price INT
+)
+
+- Действия при удалении
+
+    - RESTRICT - запрет
+    - CASCADE - удаление строк в связанных таблицах
+
+CREATE TABLE products(
+    ...
+    type_id INT REFERENCES product_types(id),
+        ON DELETE/UPDATE RESTICT / CASCADE ,
+    price INT
+)
+
+- Внешний ключ на уровне таблицы
+
+CREATE TABLE products(
+    ...
+    FOREIGN KEY(type_id) REFERECES product_types(id)
+)
+
+- Первичный и внешний ключи
+
+CREATE TABLE sales(
+    product_id INT REFERENCES products(id)
+    product_id INT REFERENCES orders(id)
+    quantity INT,
+    PRIMARY KEY(product_id, order_id)
+)
+
+
+# Представления в SQL
+
+## Теория 
+
+- Представления
+    - псевдонимы для запросов SELECT
+    - используются как аналоги таблиц
+    - не содержат данных
+
+- Использование представлений
+    - ограничение доступа к данным
+    - псевдонимы для сложных запросов
+    - сокрытие реализации
+
+- Материализованные представления
+    - содержат данные
+    - повышают скорость выполнения запросов
+    - требуют актуализации
+        - REFRESH MATERIALIZED VIEW customers_v; - с блокировкой
+        - REFRESH MATERIALIZED VIEW CONCURRENTLY customers_v;
+            - CONCURRENTLY - не блокирует на чтение. только в postgres(вроде). требует уникальный индекс у представления
+
+## Примеры
+
+###  VIEW из одной таблицы
+
+CREATE VIEW cust_v (айди, имя)
+AS SELECT id, name FROM customers;
+
+ айди |       имя       
+------+-----------------
+    1 | Иван Петров
+    2 | Петр Иванов
+    3 | Тимофей Сергеев
+    4 | Даша Корнеева
+    5 | Иван Иван
+
+### VIEW из нескольких таблиц
+
+CREATE VIEW products_v
+AS SELECT 
+    p.id AS id,
+    p.name AS product_name,
+    t.type_name AS product_type,
+    p.price AS prduct_price
+FROM products AS p
+JOIN product_types AS t
+    ON p.type_id = t.id
+
+
+# 19 Заключение
+
+## Таблицы и данные SQL
+- Работа с таблицами - CREATE/ALTER/DROP TABLE
+- 
